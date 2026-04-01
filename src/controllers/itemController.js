@@ -65,9 +65,94 @@ const deleteItem = async (req, res, next) => {
   }
 };
 
+const uploadImage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    const itemId = Number(id);
+    if (!Number.isInteger(itemId) || itemId <= 0) {
+      return res.status(400).json({ message: 'Valid item ID is required' });
+    }
+
+    const filename = req.file.filename;
+    const imageUrl = `/uploads/${filename}`;
+
+    // Update item with image in service
+    const updated = await itemService.updateItemImage(itemId, filename, imageUrl);
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Image uploaded successfully',
+      imageFilename: filename,
+      imageUrl
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getItemImages = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const itemId = Number(id);
+
+    if (!Number.isInteger(itemId) || itemId <= 0) {
+      return res.status(400).json({ message: 'Valid item ID is required' });
+    }
+
+    const item = await itemService.getItemWithImages(itemId);
+
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    return res.status(200).json({
+      id: item.id,
+      name: item.name,
+      imageFilename: item.image_filename,
+      imageUrl: item.image_url
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteImage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const itemId = Number(id);
+
+    if (!Number.isInteger(itemId) || itemId <= 0) {
+      return res.status(400).json({ message: 'Valid item ID is required' });
+    }
+
+    const updated = await itemService.removeItemImage(itemId);
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Image removed successfully'
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getItems,
   createItem,
   updateItem,
-  deleteItem
+  deleteItem,
+  uploadImage,
+  getItemImages,
+  deleteImage
 };

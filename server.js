@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
 
 // Load .env.local for local development (takes priority)
 // Fall back to .env for Docker/production
@@ -13,8 +14,15 @@ const itemRoutes = require('./src/routes/itemRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static('uploads')); // Serve uploaded files
 
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });

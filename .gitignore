@@ -24,6 +24,7 @@ coverage/
 *.pid.lock
 .tmp/
 tmp/
+uploads/
 
 # Security-sensitive files
 *.pem
