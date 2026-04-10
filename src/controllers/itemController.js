@@ -1,9 +1,24 @@
 const itemService = require('../services/itemService');
 
+const normalizeImageUrl = (imageUrl) => {
+  if (!imageUrl) {
+    return imageUrl;
+  }
+
+  return imageUrl.startsWith('/uploads/')
+    ? imageUrl.replace('/uploads/', '/api/uploads/')
+    : imageUrl;
+};
+
 const getItems = async (_req, res, next) => {
   try {
     const items = await itemService.fetchItems();
-    return res.status(200).json(items);
+    return res.status(200).json(
+      items.map((item) => ({
+        ...item,
+        image_url: normalizeImageUrl(item.image_url)
+      }))
+    );
   } catch (error) {
     return next(error);
   }
@@ -79,7 +94,7 @@ const uploadImage = async (req, res, next) => {
     }
 
     const filename = req.file.filename;
-    const imageUrl = `/uploads/${filename}`;
+    const imageUrl = `/api/uploads/${filename}`;
 
     // Update item with image in service
     const updated = await itemService.updateItemImage(itemId, filename, imageUrl);
@@ -117,7 +132,7 @@ const getItemImages = async (req, res, next) => {
       id: item.id,
       name: item.name,
       imageFilename: item.image_filename,
-      imageUrl: item.image_url
+      imageUrl: normalizeImageUrl(item.image_url)
     });
   } catch (error) {
     return next(error);
