@@ -5,19 +5,8 @@ const itemController = require('../controllers/itemController');
 
 const router = express.Router();
 
-// Multer configuration for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    // Save with timestamp to avoid conflicts
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     // Only allow image files
@@ -37,6 +26,7 @@ router.post('/', itemController.createItem);
 router.put('/:id', itemController.updateItem);
 router.delete('/:id', itemController.deleteItem);
 router.post('/:id/image', upload.single('image'), itemController.uploadImage);
+router.get('/image/:blobName', itemController.streamItemImage);
 router.get('/:id/images', itemController.getItemImages);
 router.delete('/:id/image', itemController.deleteImage);
 

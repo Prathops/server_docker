@@ -6,6 +6,9 @@ const fs = require('fs');
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+const pool = require('./src/config/db');
+const blobService = require('./src/services/blobService');
+
 const itemRoutes = require('./src/routes/itemRoutes');
 
 const app = express();
@@ -39,6 +42,33 @@ app.use('/api/uploads', express.static(uploadsDir));
 
 app.get('/health', (_req, res) => {
 	res.status(200).json({ status: 'ok' });
+});
+
+app.get('/health/ready', async (_req, res) => {
+	const checks = {
+		db: { ok: false },
+		blob: { ok: false }
+	};
+
+	try {
+		await pool.query('SELECT 1');
+		checks.db = { ok: true };
+	} catch (error) {
+		checks.db = { ok: false, error: error.message };
+	}
+
+	try {
+		await blobService.checkHealth();
+		checks.blob = { ok: true };
+	} catch (error) {
+		checks.blob = { ok: false, error: error.message };
+	}
+
+	const ok = checks.db.ok && checks.blob.ok;
+	res.status(ok ? 200 : 503).json({
+		status: ok ? 'ready' : 'not-ready',
+		checks
+	});
 });
 
 app.use('/api/items', itemRoutes);
