@@ -8,7 +8,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: app-backend-itemapp-dev-eas
-  NODE_VERSION: "20.x"
+  NODE_VERSION: "22.x"
 
 jobs:
   build-and-deploy:
