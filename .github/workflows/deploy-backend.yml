@@ -3,45 +3,26 @@ name: Deploy Backend
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - "server/**"
-      - ".github/workflows/deploy-backend.yml"
+    branches: [main]
 
 jobs:
   deploy:
-    name: Deploy Backend App Service
     runs-on: ubuntu-latest
     environment: dev
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: server/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install backend dependencies
-        working-directory: server
-        run: npm ci --omit=dev
+      - run: npm ci --omit=dev
 
-      - name: Check backend publish profile secret
-        env:
-          PUBLISH_PROFILE: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
-        run: |
-          if [ -z "$PUBLISH_PROFILE" ]; then
-            echo "AZURE_BACKEND_PUBLISH_PROFILE secret is missing or not available to the dev environment."
-            exit 1
-          fi
-
-      - name: Deploy backend
-        uses: azure/webapps-deploy@v3
+      - uses: azure/webapps-deploy@v3
         with:
           app-name: app-backend-itemapp-dev-eas
           publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
-          package: server
+          package: .
