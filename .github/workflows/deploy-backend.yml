@@ -1,35 +1,47 @@
-name: Deploy Backend to Azure App Service
+name: Deploy Backend
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-  workflow_dispatch:
-
-env:
-  AZURE_WEBAPP_NAME: app-backend-itemapp-dev-eas
-  NODE_VERSION: "22.x"
+    paths:
+      - "server/**"
+      - ".github/workflows/deploy-backend.yml"
 
 jobs:
-  build-and-deploy:
+  deploy:
+    name: Deploy Backend App Service
     runs-on: ubuntu-latest
+    environment: dev
 
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "22"
           cache: npm
+          cache-dependency-path: server/package-lock.json
 
-      - name: Install production dependencies
+      - name: Install backend dependencies
+        working-directory: server
         run: npm ci --omit=dev
 
-      - name: Deploy to Azure Web App
+      - name: Check backend publish profile secret
+        env:
+          PUBLISH_PROFILE: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
+        run: |
+          if [ -z "$PUBLISH_PROFILE" ]; then
+            echo "AZURE_BACKEND_PUBLISH_PROFILE secret is missing or not available to the dev environment."
+            exit 1
+          fi
+
+      - name: Deploy backend
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .
+          app-name: app-backend-itemapp-dev-eas
+          publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
+          package: server
